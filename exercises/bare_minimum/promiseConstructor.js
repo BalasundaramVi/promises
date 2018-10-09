@@ -16,7 +16,8 @@ var pluckFirstLineFromFileAsync = function(filePath) {
         reject(err);
       } else {
         var idx = data.indexOf('\n');
-        resolve(data.slice(0, idx));
+        var name = data.slice(0, idx);
+        resolve(name);
       }
     });
   });

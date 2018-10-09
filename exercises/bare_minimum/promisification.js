@@ -7,6 +7,9 @@ var fs = require('fs');
 var request = require('request');
 var crypto = require('crypto');
 var Promise = require('bluebird');
+Promise.promisifyAll(request);
+Promise.promisifyAll(crypto);
+Promise.promisifyAll(fs);
 
 // (1) Asyncronous HTTP request
 var getGitHubProfile = function(user, callback) {
@@ -28,7 +31,7 @@ var getGitHubProfile = function(user, callback) {
 };
 
 // TODO //
-var getGitHubProfileAsync = function(user, callback) {
+var getGitHubProfileAsync = function(user) {
   return new Promise((resolve, reject) => {
     var options = {
       url: 'https://api.github.com/users/' + user,
@@ -38,15 +41,17 @@ var getGitHubProfileAsync = function(user, callback) {
 
     request.get(options, function(err, res, body) {
       if (err) {
-        reject(callback(err, null));
+        reject(err, body);
       } else if (body.message) {
-        resolve(callback(new Error('Failed to get GitHub profile: ' + body.message), null));
+        reject(new Error('Failed to get GitHub profile: ' + body.message), body);
       } else {
-        resolve((null, body));
+        resolve(body);
       }
     });
   });
 };
+
+
 
 // (2) Asyncronous token generation
 var generateRandomToken = function(callback) {
@@ -56,7 +61,17 @@ var generateRandomToken = function(callback) {
   });
 };
 
-var generateRandomTokenAsync; // TODO
+var generateRandomTokenAsync = function() {
+  return new Promise((resolve, reject) => {
+    crypto.randomBytes(20, function(err, buffer) {
+      if (err) {
+        reject(err, null);
+      } else {
+        resolve(buffer.toString('hex'));
+      }
+    });
+  });
+};
 
 
 // (3) Asyncronous file manipulation
@@ -74,7 +89,23 @@ var readFileAndMakeItFunny = function(filePath, callback) {
   });
 };
 
-var readFileAndMakeItFunnyAsync; // TODO
+var readFileAndMakeItFunnyAsync = function(filePath) {
+  return new Promise ((resolve, reject) => {
+    fs.readFile(filePath, 'utf8', function(err, file) {
+      if (err) {
+        reject(err);
+      } else {
+        var funnyFile = file.split('\n')
+          .map(function(line) {
+            return line + ' lol';
+          })
+          .join('\n');
+        
+        resolve(funnyFile);
+      }
+    });
+  });
+};
 
 // Export these functions so we can test them and reuse them in later exercises
 module.exports = {
